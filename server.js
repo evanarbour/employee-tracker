@@ -2,18 +2,22 @@
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
 const consoleTable = require('console.table');
+const PORT = process.env.PORT || 3001;
 
 // create connection of database and server.js
 const db = mysql.createConnection(
     {
         host: 'localhost',
-        port: 3001,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
+        database: 'company_db',
+        user: 'root',
+        password: 'Tiber121!'
+        
     },
-    console.log('Connected to the company_db database.')
+    console.log(`Connected to the company_db database on port ${PORT}.`)
 );
+
+// initialize CLI prompt
+startPrompt();
 
 // initial prompt 
 function startPrompt() {
@@ -65,8 +69,28 @@ function startPrompt() {
     });
 };
 
-// 
+// View All Employees
+function viewAllEmployees() {
+    db.query(`SELECT employee.id, 
+            employee.first_name, 
+            employee.last_name, 
+            roles.title, 
+            roles.salary, 
+            department.title AS 'department'
+            FROM employee, roles, department
+            WHERE department.id = roles.department_id 
+            AND roles.id = employee.roles_id`, 
+    (err, res) => {
+       if (err) {
+           console.log(err);
+        }
+       console.table(res);
+       startPrompt();
+    });
+};
+
+// View All Roles
 
 
 
-startPrompt();
+
