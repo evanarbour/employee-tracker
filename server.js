@@ -32,6 +32,7 @@ function startPrompt() {
             'Add Department'
         ]
     }]).then((val) => {
+        // using a switch statement to handle the different outcomes based on user input
         switch (val.initial) {
             case 'View All Employees':
                 viewAllEmployees();
@@ -64,3 +65,8 @@ function startPrompt() {
     });
 };
 
+// 
+
+
+
+startPrompt();
