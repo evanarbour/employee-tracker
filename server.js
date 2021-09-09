@@ -98,10 +98,23 @@ const viewAllRoles = () => {
          }
         console.table(res);
         startPrompt();
-     });
+    });
 };
-// Add Employee
-
+// View All Departments
+const viewAllDepartments = () => {
+    db.query(`SELECT employee.first_name,
+            employee.last_name, 
+            department.title AS department FROM employee
+            JOIN roles on employee.roles_id = roles.id
+            JOIN department on roles.department_id = department.id`,
+    (err, res) => {
+        if (err) {
+            console.log(err);
+            }
+        console.table(res);
+        startPrompt();
+    });
+};
 
 
 // initialize CLI prompt
