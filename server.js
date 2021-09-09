@@ -16,11 +16,8 @@ const db = mysql.createConnection(
     console.log(`Connected to the company_db database on port ${PORT}.`)
 );
 
-// initialize CLI prompt
-startPrompt();
-
 // initial prompt 
-function startPrompt() {
+const startPrompt = () => {
     inquirer.prompt([
     {
         type: 'list', 
@@ -70,7 +67,7 @@ function startPrompt() {
 };
 
 // View All Employees
-function viewAllEmployees() {
+const viewAllEmployees = () => {
     db.query(`SELECT employee.id, 
             employee.first_name, 
             employee.last_name, 
@@ -89,8 +86,23 @@ function viewAllEmployees() {
     });
 };
 
-// View All Roles
+// View All Roles 
+const viewAllRoles = () => {
+    db.query(`SELECT employee.first_name, 
+            employee.last_name, 
+            roles.title AS role FROM employee 
+            JOIN roles ON employee.roles_id = roles.id`, 
+    (err, res) => {
+        if (err) {
+            console.log(err);
+         }
+        console.table(res);
+        startPrompt();
+     });
+};
+// Add Employee
 
 
 
-
+// initialize CLI prompt
+startPrompt();
