@@ -292,6 +292,20 @@ const updateEmployeeRole = () => {
      });
     });
 };
+// view Budget
+const viewDepartmentBudget = () => {
+    db.query(`SELECT department.id AS id,
+            department.title AS department,
+            SUM(salary) AS budget
+            FROM roles
+            JOIN department ON roles.department_id = department.id
+            GROUP BY roles.department_id`, 
+        (err,res) => {
+            if (err) console.log(err)
+            console.table(res)
+            startPrompt();
+            });
+};
 
 // initialize CLI prompt
 startPrompt();
