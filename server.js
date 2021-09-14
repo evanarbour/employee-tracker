@@ -10,7 +10,7 @@ const db = mysql.createConnection(
         host: 'localhost',
         database: 'company_db',
         user: 'root',
-        password: 'Tiber121!'
+        password: 'password-here!'
         
     },
     console.log(`Connected to the company_db database on port ${PORT}.`),
