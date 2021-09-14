@@ -37,7 +37,8 @@ const startPrompt = () => {
             'View All Roles', 
             'Add Role', 
             'View All Departments', 
-            'Add Department'
+            'Add Department',
+            'View Department Budget'
         ]
     }]).then((val) => {
         // using a switch statement to handle the different outcomes based on user input
@@ -68,6 +69,10 @@ const startPrompt = () => {
 
             case 'Add Department':
                 addDepartment();
+            break;
+
+            case 'View Department Budget':
+                viewDepartmentBudget();
             break;
         };
     });
@@ -100,7 +105,8 @@ const viewAllEmployees = () => {
 
 // View All Roles 
 const viewAllRoles = () => {
-    db.query(`SELECT roles.id, roles.title, roles.salary, roles.department_id AS 'department' FROM roles`, 
+    db.query(`SELECT roles.id, roles.title, roles.salary, department.title AS 'department' FROM roles
+            JOIN department ON department.id = roles.department_id`, 
     (err, res) => {
         if (err) {
             console.log(err);
@@ -183,7 +189,7 @@ const addEmployee = () => {
             manager_id: val.manager,
         
         })
-        console.table(val)
+        console.log('Employee successfully added!')
         startPrompt()
     }).catch((err) => {
         console.log(err)
@@ -193,7 +199,9 @@ const addEmployee = () => {
 
 // Add Role
 const addRole = () => {
-    db.query(`SELECT roles.title AS Title, roles.salary AS Salary FROM roles`, (err, res) => {
+    db.query(`SELECT department.title, department.id FROM department`, 
+    (err, res) => {
+        const departmentChoices = res.map(({ title, id }) => ({ department: id, value: title }));
         inquirer.prompt([
             {
                 name: "Title", 
@@ -204,6 +212,12 @@ const addRole = () => {
                 name: "Salary",
                 type: "input", 
                 message: "Enter role salary:"
+            }, 
+            {
+                name: "department",
+                type: "list",
+                message: "Choose department for the role:",
+                choices: departmentChoices
             }
         ]).then((res) => {
             db.query(`INSERT INTO roles SET ?`, 
@@ -231,6 +245,7 @@ const addDepartment = () => {
 
         }
     ]).then((val) => {
+
         db.query(`INSERT INTO department SET ?`, 
             {
                 title: val.name
@@ -269,7 +284,6 @@ const updateEmployeeRole = () => {
         db.query(`UPDATE employee SET roles_id = ${roleId} WHERE id = ${val.nameChoice}`, 
             (err,res) => {
                 if (err) console.log(err)
-                console.table(res)
                 console.log('Employee update: successful!')
                 startPrompt();
             }
