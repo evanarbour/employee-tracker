@@ -180,7 +180,7 @@ const addEmployee = () => {
     }
     ]).then((val) => {
         let roleId = selectRole().indexOf(val.role)
-        let managerId = selectManager().indexOf(val.manager) +1
+        let managerId = selectManager().indexOf(val.manager)
         db.query(`INSERT INTO employee SET ?`,
         {
             first_name: val.firstName,
@@ -195,6 +195,55 @@ const addEmployee = () => {
         console.log(err)
     })
 };
+
+// Update Employee Role
+const addRole = () => {
+    db.query(`SELECT roles.title AS Title, roles.salary AS Salary FROM roles`, (err, res) => {
+        inquirer.prompt([
+            {
+                name: "Title", 
+                type: "input",
+                message: "Enter name of the new role:"
+            }, 
+            {
+                name: "Salary",
+                type: "input", 
+                message: "Enter role salary:"
+            }
+        ]).then((res) => {
+            db.query(`INSERT INTO roles SET ?`, 
+            {
+                title: res.Title,
+                salary: res.Salary,
+            },
+            (err, res) => {
+                if (err) console.log(err)
+                console.log('Role successfully created!');
+                startPrompt();
+            }
+            )
+        });
+    });
+};
+
+// add Employee
+const addEmployee = () => {
+    inquirer.prompt([
+        {
+            name: "firstName", 
+            type: "input", 
+            message: "Enter employee's first name:",
+
+        },
+        {
+            name: "lastName",
+            type: "input",
+            message: "Enter employee's last name:"
+
+        }
+    ])
+
+}
 
 // initialize CLI prompt
 startPrompt();
