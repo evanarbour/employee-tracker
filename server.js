@@ -2,6 +2,7 @@
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
 const consoleTable = require('console.table');
+const { listenerCount } = require('events');
 const PORT = process.env.PORT || 3001;
 
 // create connection of database and server.js
@@ -66,6 +67,9 @@ const startPrompt = () => {
     });
 };
 
+
+// 
+// 
 // View All Employees
 const viewAllEmployees = () => {
     db.query(`SELECT employee.id, 
@@ -73,13 +77,15 @@ const viewAllEmployees = () => {
             employee.last_name, 
             roles.title, 
             roles.salary, 
-            department.title AS 'department'
-            FROM employee, roles, department
-            WHERE department.id = roles.department_id 
-            AND roles.id = employee.roles_id`, 
+            department.title AS 'department',
+            CONCAT(e.first_name, ' ',e.last_name) AS manager FROM employee
+            INNER JOIN roles ON roles.id = employee.roles_id 
+            INNER JOIN department ON department.id = roles.department_id
+            LEFT JOIN employee e ON employee.manager_id = e.id
+            ORDER BY employee.id`, 
     (err, res) => {
        if (err) {
-           console.log(err);
+           console.log(err);Í
         }
        console.table(res);
        startPrompt();
@@ -88,10 +94,7 @@ const viewAllEmployees = () => {
 
 // View All Roles 
 const viewAllRoles = () => {
-    db.query(`SELECT employee.first_name, 
-            employee.last_name, 
-            roles.title AS role FROM employee 
-            JOIN roles ON employee.roles_id = roles.id`, 
+    db.query(`SELECT roles.title AS Roles FROM roles`, 
     (err, res) => {
         if (err) {
             console.log(err);
@@ -102,11 +105,7 @@ const viewAllRoles = () => {
 };
 // View All Departments
 const viewAllDepartments = () => {
-    db.query(`SELECT employee.first_name,
-            employee.last_name, 
-            department.title AS department FROM employee
-            JOIN roles on employee.roles_id = roles.id
-            JOIN department on roles.department_id = department.id`,
+    db.query(`SELECT * FROM department`,
     (err, res) => {
         if (err) {
             console.log(err);
@@ -116,6 +115,86 @@ const viewAllDepartments = () => {
     });
 };
 
+// Add Employee
+
+// Because roles and employees are a dynamic component of the CLI - the user can update/add data - 
+// we need to access all of the roles and potential managers each time via an array
+
+// Select all Roles 
+var roleArray = [];
+function selectRole() {
+    db.query(`SELECT roles.title FROM roles`, 
+    (err, res) => {
+        if (err) {
+            console.log(err);
+            }
+        for (var i = 0; i < res.length; i++) {
+            roleArray.push(res[i].title);
+        }
+    })
+    return roleArray;
+};
+
+// Select all Managers 
+var managerArray = [];
+function selectManager() {
+    db.query(`SELECT first_name, last_name FROM employee WHERE manager_id IS NULL`, 
+    (err, res) => {
+        if (err) {
+            console.log(err);
+            }
+        for (var i = 0; i < res.length; i++) {
+            managerArray.push(res[i].first_name);
+        }
+    })
+    return managerArray;
+};
+
+const addEmployee = () => {
+    inquirer.prompt([
+    {
+        name: "firstName",
+        type: "input",
+        message: "Enter Employee's First Name:"
+
+    }, {
+
+        name: "lastName",
+        type: "input", 
+        message: "Enter Employee's Last Name:"
+
+    }, {
+
+        name: "role", 
+        message: "Please choose Employee's Role:",
+        type: "list",
+        choices:
+            selectRole()
+    }, {
+
+        name: 'manager',
+        message: "Please Choose Employee's Manager:",
+        type: "list", 
+        choices:
+            selectManager()
+    }
+    ]).then((val) => {
+        let roleId = selectRole().indexOf(val.role)
+        let managerId = selectManager().indexOf(val.manager) +1
+        db.query(`INSERT INTO employee SET ?`,
+        {
+            first_name: val.firstName,
+            last_name: val.lastName,
+            roles_id: roleId,
+            manager_id: managerId,
+        
+        })
+        console.table(val)
+        startPrompt()
+    }).catch((err) => {
+        console.log(err)
+    })
+};
 
 // initialize CLI prompt
 startPrompt();
