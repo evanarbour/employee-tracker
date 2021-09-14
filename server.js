@@ -2,7 +2,6 @@
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
 const consoleTable = require('console.table');
-const { listenerCount } = require('events');
 const PORT = process.env.PORT || 3001;
 
 // create connection of database and server.js
@@ -14,7 +13,14 @@ const db = mysql.createConnection(
         password: 'Tiber121!'
         
     },
-    console.log(`Connected to the company_db database on port ${PORT}.`)
+    console.log(`Connected to the company_db database on port ${PORT}.`),
+    console.log("\n"),
+    console.log("************************************"),
+    console.log("*                                  *"),
+    console.log("*   EMPLOYEE MANAGEMENT DATABASE   *"),
+    console.log("*                                  *"),
+    console.log("************************************"),
+    console.log("\n")
 );
 
 // initial prompt 
@@ -94,7 +100,7 @@ const viewAllEmployees = () => {
 
 // View All Roles 
 const viewAllRoles = () => {
-    db.query(`SELECT roles.title AS Roles FROM roles`, 
+    db.query(`SELECT roles.id, roles.title, roles.salary, roles.department_id AS 'department' FROM roles`, 
     (err, res) => {
         if (err) {
             console.log(err);
@@ -117,10 +123,9 @@ const viewAllDepartments = () => {
 
 // Add Employee
 
-// Because roles and employees are a dynamic component of the CLI - the user can update/add data - 
-// we need to access all of the roles and potential managers each time via an array
+// Because roles are a dynamic component of the CLI - the user can update/add data - we need access via an array
 
-// Select all Roles 
+// create roleArray via selectRole()
 var roleArray = [];
 function selectRole() {
     db.query(`SELECT roles.title FROM roles`, 
@@ -135,22 +140,11 @@ function selectRole() {
     return roleArray;
 };
 
-// Select all Managers 
-var managerArray = [];
-function selectManager() {
-    db.query(`SELECT first_name, last_name FROM employee WHERE manager_id IS NULL`, 
-    (err, res) => {
-        if (err) {
-            console.log(err);
-            }
-        for (var i = 0; i < res.length; i++) {
-            managerArray.push(res[i].first_name);
-        }
-    })
-    return managerArray;
-};
-
 const addEmployee = () => {
+    db.query(`SELECT id, first_name, last_name FROM employee WHERE manager_id IS NULL`, 
+    (err, res) => {
+        const managerChoices = res.map(({id, first_name, last_name }) => ({name: `${first_name} ${last_name}`, value: id}));
+    
     inquirer.prompt([
     {
         name: "firstName",
@@ -175,18 +169,18 @@ const addEmployee = () => {
         name: 'manager',
         message: "Please Choose Employee's Manager:",
         type: "list", 
-        choices:
-            selectManager()
+        choices: managerChoices
+            
     }
     ]).then((val) => {
-        let roleId = selectRole().indexOf(val.role)
-        let managerId = selectManager().indexOf(val.manager)
+        let roleId = selectRole().indexOf(val.role) +1
+        // let managerId = selectManager().indexOf(val.manager)
         db.query(`INSERT INTO employee SET ?`,
         {
             first_name: val.firstName,
             last_name: val.lastName,
             roles_id: roleId,
-            manager_id: managerId,
+            manager_id: val.manager,
         
         })
         console.table(val)
@@ -194,9 +188,10 @@ const addEmployee = () => {
     }).catch((err) => {
         console.log(err)
     })
+})
 };
 
-// Update Employee Role
+// Add Role
 const addRole = () => {
     db.query(`SELECT roles.title AS Title, roles.salary AS Salary FROM roles`, (err, res) => {
         inquirer.prompt([
@@ -226,24 +221,63 @@ const addRole = () => {
     });
 };
 
-// add Employee
-const addEmployee = () => {
+// add Department
+const addDepartment = () => {
     inquirer.prompt([
         {
-            name: "firstName", 
+            name: "name", 
             type: "input", 
-            message: "Enter employee's first name:",
-
-        },
-        {
-            name: "lastName",
-            type: "input",
-            message: "Enter employee's last name:"
+            message: "Enter department name:",
 
         }
-    ])
+    ]).then((val) => {
+        db.query(`INSERT INTO department SET ?`, 
+            {
+                title: val.name
+            },
+            (err, res) => {
+                if (err) console.log(err)
+                console.log('Department successfully created!');
+                startPrompt();
+            }
+        
+        );
+    });
 
-}
+};
+
+// update Employee Role
+const updateEmployeeRole = () => {
+    db.query(`SELECT employee.id, employee.first_name, employee.last_name, roles.title FROM employee 
+            JOIN roles ON employee.roles_id = roles.id`, (err, res) => {
+                const employeeChoices = res.map(({id, first_name, last_name}) => ({name: `${first_name} ${last_name}`, value: id}));   
+                inquirer.prompt([
+                    {
+                        name: "nameChoice",
+                        type: "list",
+                        message: "Choose Employee:",
+                        choices: employeeChoices
+                    },
+                    {
+                        name: "role", 
+                        type: "list", 
+                        message: "Enter Employee's new role:",
+                        choices: selectRole()
+                    }
+    ]).then((val) => {
+        let roleId = selectRole().indexOf(val.role) +1
+        db.query(`UPDATE employee SET roles_id = ${roleId} WHERE id = ${val.nameChoice}`, 
+            (err,res) => {
+                if (err) console.log(err)
+                console.table(res)
+                console.log('Employee update: successful!')
+                startPrompt();
+            }
+                    
+        )
+     });
+    });
+};
 
 // initialize CLI prompt
 startPrompt();
