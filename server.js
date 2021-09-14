@@ -10,7 +10,7 @@ const db = mysql.createConnection(
         host: 'localhost',
         database: 'company_db',
         user: 'root',
-        password: 'password-here!'
+        password: 'super-secure-password!'
         
     },
     console.log(`Connected to the company_db database on port ${PORT}.`),
@@ -106,7 +106,8 @@ const viewAllEmployees = () => {
 // View All Roles 
 const viewAllRoles = () => {
     db.query(`SELECT roles.id, roles.title, roles.salary, department.title AS 'department' FROM roles
-            JOIN department ON department.id = roles.department_id`, 
+            JOIN department ON department.id = roles.department_id
+            ORDER BY roles.id`, 
     (err, res) => {
         if (err) {
             console.log(err);
@@ -201,7 +202,7 @@ const addEmployee = () => {
 const addRole = () => {
     db.query(`SELECT department.title, department.id FROM department`, 
     (err, res) => {
-        const departmentChoices = res.map(({ title, id }) => ({ department: id, value: title }));
+        const departmentChoices = res.map(({ title, id }) => ({ name: title, value: id }));
         inquirer.prompt([
             {
                 name: "Title", 
@@ -224,6 +225,7 @@ const addRole = () => {
             {
                 title: res.Title,
                 salary: res.Salary,
+                department_id: res.department,
             },
             (err, res) => {
                 if (err) console.log(err)
